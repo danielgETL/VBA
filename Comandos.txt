@@ -1,0 +1,333 @@
+
+--------------------------------------------------------------------------------------------------------------
+--- Copia PDF ------------------------------------------------------------------------------------------------
+
+
+' Microsoft SQL Server Integration Services Script Task
+' Write scripts using Microsoft Visual Basic
+' The ScriptMain class is the entry point of the Script Task.
+
+Imports System
+Imports System.Data
+Imports System.Math
+Imports Microsoft.SqlServer.Dts.Runtime
+Imports Microsoft.Office.Interop
+Imports System.Xml
+Imports ADODB
+Imports System.IO
+
+Public Class ScriptMain
+
+    ' The execution engine calls this method when the task executes.
+    ' To access the object model, use the Dts object. Connections, variables, events,
+    ' and logging features are available as static members of the Dts class.
+    ' Before returning from this method, set the value of Dts.TaskResult to indicate success or failure.
+    ' 
+    ' To open Code and Text Editor Help, press F1.
+    ' To open Object Browser, press Ctrl+Alt+J.
+
+    Public xlApp As Excel.Application
+    Public xlWorkbook As Excel.Workbook
+    Public xlWorkSheet As Excel.Worksheet
+
+    Public Sub Main()
+
+        Dim CaminhoTemplate As String
+        Dim NmServer As String
+        Dim strSQL As String
+        Dim cnn As New ADODB.Connection
+        Dim rs As ADODB.Recordset
+
+        cnn.Open(Dts.Variables("CString_DB_ADMIX_IN").Value.ToString)
+
+        strSQL = "SELECT @@SERVERNAME"
+        rs = cnn.Execute(strSQL)
+
+        NmServer = rs.GetString
+
+        strSQL = "SELECT CAMINHO + 'TEMPLATE_RATEIO_GOODYEAR_SEGUROS UNIMED.xls' AS CAMINHO FROM SFM_AD_TEMPLATE_DIRETORIO WHERE NM_SERVER = REPLACE('" & NmServer & "',CHAR (13),'')"
+
+        rs = cnn.Execute(strSQL)
+
+        CaminhoTemplate = rs.GetString
+
+        Try
+
+            File.Copy(CaminhoTemplate, Dts.Variables("Caminho").Value.ToString)
+
+        Catch ex As Exception
+            Throw New Exception(CaminhoTemplate)
+        End Try
+
+    End Sub
+    Public Sub OpenExcel(ByVal strCaminho As String)
+
+        xlApp = New Excel.Application
+        xlWorkbook = xlApp.Workbooks.Open(strCaminho)
+
+    End Sub
+    Public Sub ActiveSheet(ByVal intSheet As Integer)
+        xlWorkSheet = CType(xlWorkbook.Worksheets(intSheet), Excel.Worksheet)
+        xlWorkSheet.Activate()
+    End Sub
+    Public Sub SaveExcel(ByVal strCaminho As String)
+        'Salva Excel
+        xlApp.DisplayAlerts = False
+        If (Not xlWorkbook Is Nothing) Then xlWorkbook.SaveAs(strCaminho)
+        If (Not xlApp Is Nothing) Then xlApp.Quit()
+    End Sub
+    Public Sub CloseExcel()
+
+        xlApp.Quit()
+        releaseObject(xlApp)
+        releaseObject(xlWorkbook)
+        releaseObject(xlWorkSheet)
+
+    End Sub
+
+    Private Sub releaseObject(ByVal obj As Object)
+        Try
+            System.Runtime.InteropServices.Marshal.ReleaseComObject(obj)
+            obj = Nothing
+        Catch ex As Exception
+            obj = Nothing
+        Finally
+            GC.Collect()
+        End Try
+    End Sub
+
+End Class
+
+--------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------------------------------------
+--- SCRIPT Caminho DTS (Diretorio) ---------------------------------------------------------------------------
+
+USE SIGB
+GO
+
+DECLARE @ID_FATOR_CONFIG INT
+SELECT @ID_FATOR_CONFIG = CONF.ID_FATOR_CONFIG
+FROM SFM_AD_FATOR_CONFIG CONF
+	INNER JOIN AD_ESTIPULANTE EST 
+		ON CONF.ID_ESTIPULANTE = EST.ID_PAPEL_RELACIONAMENTO
+	INNER JOIN AD_GRUPO_FINANCEIRO GRU
+		ON CONF.ID_GRUPO_FINANCEIRO = GRU.ID_GRUPO_FINANCEIRO
+WHERE 1=1
+AND EST.CD_APOLICE = '9601845000013501'
+AND GRU.DS_GRUPO_FINANCEIRO = 'MOTOROLA SOLUTIONS'
+AND CONF.ID_TIPO_ARQUIVO = 2
+
+
+IF @ID_FATOR_CONFIG IS NOT NULL 
+BEGIN
+	INSERT INTO SFM_AD_FATOR_DIRETORIO VALUES (@ID_FATOR_CONFIG,'MAPFRE\2018\06\FATURA\MOTOROLA SOLUTIONS','.pdf',0,1,1)
+END
+ELSE 
+	PRINT 'ROTINA NÃO CADASTRADA'
+	
+--------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------------------------------------
+--- WHILE  ---------------------------------------------------------------------------------------------------
+
+Dim x As Integer
+
+            x = 1
+
+            While x <= Rows
+                If Not xlWorkSheet.Range("C" & x).Value Is Nothing Then
+                    If xlWorkSheet.Range("C" & x).Value.ToString() = "VIDA" Then
+                        xlWorkSheet.Range("A2:AF" & x).Borders.ColorIndex = 1
+                    End If
+                End If
+
+
+                x = x + 1
+
+            End While
+
+
+-----------------------------------------------------------------------------------------------------------
+
+        i = 2
+
+        While i <= Rows
+            If xlWorkSheet.Range("A" & i).Value.ToString() = "2" Then
+                With xlWorkSheet.Range("A" & i & ":G" & i)
+                    .Borders.ColorIndex = 1
+                    .Font.Name = "Calibri"
+                    .Font.Size = 10
+                    .Interior.ColorIndex = 6
+                End With
+            End If
+
+            i = i + 1
+
+        End While
+
+
+-----------------------------------------------------------------------------------------------------------
+
+        i = 2
+
+        While i <= Rows
+            If Not (xlWorkSheet.Range("D" & i).Value Is Nothing) Then
+                'MsgBox("OK")
+                If xlWorkSheet.Range("A" & i).Value.ToString() = "1" And xlWorkSheet.Range("D" & i).Value.ToString() = "TITULAR" Then
+                    'MsgBox("OK1")
+                    With xlWorkSheet.Range("D" & i)
+                        .Interior.ColorIndex = 40
+                        .Font.Bold = True
+                        .Borders.ColorIndex = 1
+                        .Font.Name = "Calibri"
+                        .Font.Size = 10
+                    End With
+                    With xlWorkSheet.Range("A" & i & ":I" & i)
+                        .Font.Bold = True
+                    End With
+                End If
+            End If
+
+            i = i + 1
+
+        End While
+
+
+--------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+
+
+
+--------------------------------------------------------------------------------------------------------------
+--- RETORNA NOME DA SHEET  -----------------------------------------------------------------------------------
+
+
+  Dim plan As String
+
+        plan = xlWorkSheet.Name.ToString
+
+        MsgBox(plan)
+
+        With xlWorkSheet.Range("C9")
+            .CopyFromRecordset(rs)
+        End With
+
+
+--------------------------------------------------------------------------------------------------------------
+--- CONVERT LINHAS  -----------------------------------------------------------------------------------
+
+
+
+        Dim A As Excel.Worksheet = CType(xlWorkbook.Worksheets(4), Excel.Worksheet)
+        A.UsedRange.Formula = A.UsedRange.Formula
+        A.Calculate()
+
+
+        A = CType(xlWorkbook.Worksheets(4), Excel.Worksheet)
+        A.UsedRange.Formula = A.UsedRange.Formula
+        A.Calculate()
+
+
+
+--------------------------------------------------------------------------------------------------------------
+--- REMOVE COLUNA  -------------------------------------------------------------------------------------------
+
+
+        With xlWorkSheet.Range("A1")
+            .EntireColumn.Delete()
+        End With
+
+
+--------------------------------------------------------------------------------------------------------------
+--- LINHAS PONTILHADAS  --------------------------------------------------------------------------------------
+
+
+.Range("A" & i & ":H" & i).Borders.Item(Excel.XlBordersIndex.xlEdgeBottom).LineStyle = Excel.XlLineStyle.xlDot
+
+
+--------------------------------------------------------------------------------------------------------------
+--- BORDA PADRÃO  --------------------------------------------------------------------------------------------
+
+
+            With xlWorkSheet.Range("A1:M1")
+                '.Interior.ColorIndex = 15
+                .Interior.Color = RGB(0, 51, 102)
+                .Font.ColorIndex = 2
+                .Font.Name = "Calibri"
+                .Font.Size = 10
+                .Font.Bold = True
+                .Borders.ColorIndex = 1
+            End With
+
+            With xlWorkSheet.Range("A1:M" & Rows)
+                '.Borders.ColorIndex = 1
+                .Font.Name = "Calibri"
+                .Font.Size = 10
+            End With
+
+
+
+
+--------------------------------------------------------------------------------------------------------------
+--- COLA DADOS NO XLS  ---------------------------------------------------------------------------------------
+
+
+	CString_DB_ADMIX_IN
+
+
+        Dim CaminhoArquivo As String
+        Dim Rows As Integer
+        Dim strSQL As String
+        Dim cnn As New ADODB.Connection
+        Dim rs As ADODB.Recordset
+
+        cnn.Open(Dts.Variables("CString_DB_ADMIX_IN").Value.ToString)
+
+
+        strSQL = "SELECT TOP 1 CONVERT(VARCHAR,VL_CUSTO) AS VL_US FROM SULAMERICA_FAT_MOV " _
+                & " WHERE 1=1 " _
+                & " AND DT_COMPETENCIA = '" + Dts.Variables("Comp").Value.ToString() + "'" _
+                & " AND RIGHT(REPLICATE('0',16) + CD_APOLICE,16) = RIGHT(REPLICATE('0',16) + '" + Dts.Variables("Contrato").Value.ToString() + "',16) " _
+                & " AND RIGHT(REPLICATE('0',16) + CD_SUB,16) = RIGHT(REPLICATE('0',16) + '" + Dts.Variables("vSub").Value.ToString() + "',16) " _
+                & " AND VL_CUSTO NOT LIKE '%0.0000%'"
+
+        rs = cnn.Execute(strSQL)
+
+
+		'grava dados do select no excel
+		With xlWorkSheet.Range("I9")
+			.CopyFromRecordset(rs)
+		End With
+
+		Rows = xlWorkSheet.UsedRange.Rows.Count
+		With xlWorkSheet.Range("A1:Q" & Rows)
+			.Font.Name = "Calibri"
+			.Font.Size = 11
+		End With
+
+
+         rs.Close()
+            cnn.Close()
+
+
+
+
+------
+---- BORDAS 
+
+.Borders.Item(Excel.XlBordersIndex.xlEdgeRight).Weight = Excel.XlBorderWeight.xlThin
+.Borders.Item(Excel.XlBordersIndex.xlEdgeLeft).Weight = Excel.XlBorderWeight.xlThin
+
+
+
+            .HorizontalAlignment = Excel.XlHAlign.xlHAlignCenter
+            .VerticalAlignment = Excel.XlVAlign.xlVAlignCenter
+
+
+
+
