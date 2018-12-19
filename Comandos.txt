@@ -370,11 +370,12 @@ xlWorkSheet.Range("A1").RowHeight = 100
 xlWorkSheet.Range("A1").ColumnWidth = 100
 
 
+
 ---------------------------------------------------------------------------------------------------
------ Pinta Celula com colunas Especificas
+----- Pinta Celula com colunas Especificas ---
 ---------------------------------------------------------------------------------------------------
 
-
+=
 
         Dim vetor() As String
         Dim I As String
