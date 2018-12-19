@@ -363,7 +363,7 @@ Dim x As Integer
 
 
 ---------------------------------------------------------------------------------------------------
--- Altera tamanho da celula (Altura e Largura)
+--- Altera tamanho da celula (Altura e Largura)
 ---------------------------------------------------------------------------------------------------
 
 xlWorkSheet.Range("A1").RowHeight = 100
