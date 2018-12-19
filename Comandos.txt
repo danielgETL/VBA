@@ -370,4 +370,47 @@ xlWorkSheet.Range("A1").RowHeight = 100
 xlWorkSheet.Range("A1").ColumnWidth = 100
 
 
+---------------------------------------------------------------------------------------------------
+----- Pinta Celula com colunas Especificas
+---------------------------------------------------------------------------------------------------
+
+
+
+        Dim vetor() As String
+        Dim I As String
+
+        xlApp.DisplayAlerts = False
+
+        ' VERMELHO
+        vetor = Split("A1,C1,G1,B2,D2", ",")
+
+        For Each I In vetor
+            If (I.ToString() Like "*1*") Then
+                Dim t As String = I.ToString().Replace("1", "")
+                'MsgBox(t + " vermelho")
+                xlWorkSheet.Range(t.ToString() & "1").Interior.Color = RGB(255, 0, 0)
+            ElseIf (I.ToString() Like "*2*") Then
+                Dim t As String = I.ToString().Replace("2", "")
+                'MsgBox(t + " amarelo")
+                xlWorkSheet.Range(t.ToString() & "2").Interior.Color = RGB(255, 255, 0)
+            End If
+        Next
+
+
+        'AMARELO
+        vetor = Split("B,D,E", ",")
+
+        For Each I In vetor
+            xlWorkSheet.Range(I.ToString() & "1").Interior.Color = RGB(255, 255, 0)
+        Next
+
+        'CINZA
+        vetor = Split("F,E,H", ",")
+
+        For Each I In vetor
+            xlWorkSheet.Range(I.ToString() & "1").Interior.Color = RGB(191, 191, 191)
+        Next
+
+
+
 
