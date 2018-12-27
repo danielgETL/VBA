@@ -375,7 +375,6 @@ xlWorkSheet.Range("A1").ColumnWidth = 100
 ----- Pinta Celula com colunas Especificas ---
 ---------------------------------------------------------------------------------------------------
 
-=
 
         Dim vetor() As String
         Dim I As String
@@ -413,5 +412,21 @@ xlWorkSheet.Range("A1").ColumnWidth = 100
         Next
 
 
+---------------------------------------------------------------------------------------------------
+----- ADICIONANDO FORMULAS ---
+---------------------------------------------------------------------------------------------------
 
 
+   ' adicionando formula
+        xlWorkSheet.Range("C2").Formula = "=SOMA(A2+B2)"
+
+
+   ' exemplo2
+        xlWorkSheet.Range("C2").Formula = "=IF(OR(G4="""",$B$19=0),"""",ROUND(G4/$B$19,2))"
+
+
+
+        'AJUSTES FINAIS AUTOFIT
+        xlWorkSheet.Cells.EntireColumn.AutoFit()
+        xlWorkSheet.Cells.EntireRow.AutoFit()
+        xlWorkSheet.Range("A1").Select()
